@@ -11,7 +11,8 @@ import com.navercorp.pinpoint.common.server.bo.serializer.trace.v2.bitfield.Span
 import com.navercorp.pinpoint.common.server.bo.serializer.trace.v2.bitfield.SpanEventBitField;
 import com.navercorp.pinpoint.common.server.bo.serializer.trace.v2.bitfield.SpanEventQualifierBitField;
 import com.navercorp.pinpoint.common.util.TransactionId;
-import com.navercorp.pinpoint.io.util.AnnotationTranscoder;
+import com.navercorp.pinpoint.common.server.bo.AnnotationTranscoder;
+import com.navercorp.pinpoint.io.SpanVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -81,10 +82,12 @@ public class SpanDecoderV0 implements SpanDecoder {
 
     private void readSpanChunkValue(Buffer buffer, SpanChunkBo spanChunk, SpanEventBo firstSpanEvent, SpanDecodingContext decodingContext) {
         final byte version = buffer.readByte();
-        if (version != 0) {
-            throw new IllegalStateException("unknown version :" + version);
-        }
+
         spanChunk.setVersion(version);
+        if (version == SpanVersion.TRACE_V2) {
+            final long keyTime = buffer.readVLong();
+            spanChunk.setKeyTime(keyTime);
+        }
 
         List<SpanEventBo> spanEventBoList = readSpanEvent(buffer, firstSpanEvent, decodingContext);
         spanChunk.addSpanEventBoList(spanEventBoList);
@@ -93,9 +96,7 @@ public class SpanDecoderV0 implements SpanDecoder {
     public void readSpanValue(Buffer buffer, SpanBo span, SpanEventBo firstSpanEvent, SpanDecodingContext decodingContext) {
 
         final byte version = buffer.readByte();
-        if (version != 0) {
-            throw new IllegalStateException("unknown version :" + version);
-        }
+
         span.setVersion(version);
 
         final SpanBitFiled bitFiled = new SpanBitFiled(buffer.readByte());
@@ -351,30 +352,24 @@ public class SpanDecoderV0 implements SpanDecoder {
     }
 
     private AnnotationBo readFirstAnnotationBo(Buffer buffer) {
-        AnnotationBo current;
-        current = new AnnotationBo();
-        current.setKey(buffer.readSVInt());
-
+        final int key = buffer.readSVInt();
         byte valueType = buffer.readByte();
         byte[] valueBytes = buffer.readPrefixedBytes();
         Object value = transcoder.decode(valueType, valueBytes);
 
-        current.setValue(value);
+        AnnotationBo current = new AnnotationBo(key, value);
         return current;
     }
 
     private AnnotationBo readDeltaAnnotationBo(Buffer buffer, AnnotationBo prev) {
-        AnnotationBo annotation = new AnnotationBo();
-
         final int prevKey = prev.getKey();
-
-        annotation.setKey(buffer.readSVInt() + prevKey);
+        int key = buffer.readSVInt() + prevKey;
 
         byte valueType = buffer.readByte();
         byte[] valueBytes = buffer.readPrefixedBytes();
         Object value = transcoder.decode(valueType, valueBytes);
 
-        annotation.setValue(value);
+        AnnotationBo annotation = new AnnotationBo(key, value);
         return annotation;
     }
 

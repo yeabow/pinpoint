@@ -66,6 +66,7 @@
         <module>annotations</module>
         <module>agent</module>
         <module>agent-it</module>
+        <module>agent-it8</module>
         <module>agent-plugins</module>
         <module>bootstrap</module>
         <module>bootstrap-core</module>
@@ -106,14 +107,14 @@
 
         <!-- jdk 6 compatibility version -->
         <fastxml.jackson-jdk6.version>2.6.6</fastxml.jackson-jdk6.version>
-        <fastxml.jackson.version>2.9.7</fastxml.jackson.version>
+        <fastxml.jackson.version>2.9.8</fastxml.jackson.version>
 
         <httpcomponents.version>4.5.6</httpcomponents.version>
         <httpcomponents-core.version>4.4.10</httpcomponents-core.version>
         <spring.version>4.3.20.RELEASE</spring.version>
         <spring.batch.version>3.0.9.RELEASE</spring.batch.version>
         <spring.security.version>4.2.8.RELEASE</spring.security.version>
-        <asm.version>7.0</asm.version>
+        <asm.version>7.1</asm.version>
         <thrift.version>0.11.0</thrift.version>
         <ehcache.version>2.6.11</ehcache.version>
 
@@ -911,6 +912,7 @@
                         <exclude>com/navercorp/pinpoint/common/util/apache/**/*.java</exclude>
                         <exclude>com/navercorp/pinpoint/common/util/jsr166/**/*.java</exclude>
                         <exclude>com/navercorp/pinpoint/profiler/util/jdk/**/*.java</exclude>
+                        <exclude>com/navercorp/pinpoint/grpc/trace/**/*.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>

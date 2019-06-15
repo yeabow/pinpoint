@@ -26,11 +26,16 @@ import java.net.InetSocketAddress;
 public class DefaultTransportMetadata implements TransportMetadata {
 
     private final InetSocketAddress remoteAddress;
-    private final long transportId;
+    private final Long transportId;
+    private final long connectTime;
 
-    public DefaultTransportMetadata(InetSocketAddress remoteAddress, long transportId) {
+    private final LastAccessTime lastAccessTime;
+
+    public DefaultTransportMetadata(InetSocketAddress remoteAddress, long transportId, long connectTime) {
         this.remoteAddress = Assert.requireNonNull(remoteAddress, "remoteAddress must not be null");
         this.transportId = transportId;
+        this.connectTime = connectTime;
+        this.lastAccessTime = new LastAccessTime(connectTime);
     }
 
     @Override
@@ -39,16 +44,29 @@ public class DefaultTransportMetadata implements TransportMetadata {
     }
 
     @Override
-    public long getTransportId() {
+    public Long getTransportId() {
         return transportId;
+    }
+
+    @Override
+    public long getConnectTime() {
+        return connectTime;
+    }
+
+
+    @Override
+    public LastAccessTime getLastAccessTime() {
+        return lastAccessTime;
     }
 
 
     @Override
     public String toString() {
         return "DefaultTransportMetadata{" +
-                ", remoteAddress=" + remoteAddress +
+                "remoteAddress=" + remoteAddress +
                 ", transportId=" + transportId +
+                ", connectTime=" + connectTime +
+                ", lastAccessTime=" + lastAccessTime +
                 '}';
     }
 }

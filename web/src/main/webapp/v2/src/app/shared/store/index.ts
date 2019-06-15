@@ -1,7 +1,6 @@
 import { ActionReducerMap, createSelector, createFeatureSelector } from '@ngrx/store';
 
 import * as admin from './admin.reducer';
-import * as agentInfo from './agent-info.reducer';
 import * as agentSelectionForInfoPerServer from './agent-selection-for-info-per-server.reducer';
 import * as agentSelectionForSideBar from './agent-selection-for-side-bar.reducer';
 import * as applicationList from './application-list.reducer';
@@ -22,7 +21,8 @@ import * as serverMap from './server-map.reducer';
 import * as serverMapSelectedTarget from './server-map-selected-target.reducer';
 import * as serverMapLoadingState from './server-map-loading-state.reducer';
 import * as uiState from './ui-state.reducer';
-
+import * as range from './range.reducer';
+import * as chartLayout from './inspector-chart-layout-info.reducer';
 
 export interface AppState {
     timeline: ITimelineInfo;
@@ -35,7 +35,6 @@ export interface AppState {
     transactionData: ITransactionMetaData;
     transactionDetailData: ITransactionDetailData;
     hoverOnInspectorCharts: number;
-    agentInfo: IServerAndAgentData;
     applicationList: IApplication[];
     favoriteApplicationList: IApplication[];
     serverList: any;
@@ -47,6 +46,8 @@ export interface AppState {
     updateFilterOfServerAndAgentList: string;
     adminAgentList: { [key: string]: IAgent[] };
     uiState: IUIState;
+    applicationInspectorChartLayout: IChartLayoutInfoResponse;
+    agentInspectorChartLayout: IChartLayoutInfoResponse;
 }
 
 export const STORE_KEY = {
@@ -61,7 +62,6 @@ export const STORE_KEY = {
     TRANSACTION_DATA: 'transactionData',
     TRANSACTION_DETAIL_DATA: 'transactionDetailData',
     HOVER_ON_INSPECTOR_CHARTS: 'hoverOnInspectorCharts',
-    AGENT_INFO: 'agentInfo',
     APPLICATION_LIST: 'applicationList',
     FAVORITE_APPLICATION_LIST: 'favoriteApplicationList',
     SERVER_LIST: 'serverList',
@@ -73,12 +73,14 @@ export const STORE_KEY = {
     ADMIN_AGENT_LIST: 'adminAgentList',
     SERVER_AND_AGENT: 'serverAndAgent',
     UI_STATE: 'uiState',
+    RANGE: 'range',
+    APPLICATION_INSPECTOR_CHART_LAYOUT: 'applicationInspectorChartLayout',
+    AGENT_INSPECTOR_CHART_LAYOUT: 'agentInspectorChartLayout',
 };
 
 
 export const reducers: ActionReducerMap<any> = {
     // [STORE_KEY.AGENT_INFo]: agentInfoReducer 방식은 빌드시 에러가 발생 함.
-    agentInfo: agentInfo.Reducer,
     agentSelection: agentSelectionForSideBar.Reducer,
     agentSelectionForServerList: agentSelectionForInfoPerServer.Reducer,
     applicationList: applicationList.Reducer,
@@ -100,6 +102,9 @@ export const reducers: ActionReducerMap<any> = {
     serverAndAgent: serverAndAgent.Reducer,
     uiState: uiState.Reducer,
     timeline: timeline.Reducer,
+    range: range.Reducer,
+    applicationInspectorChartLayout: chartLayout.ApplicationInspectorChartLayoutReducer,
+    agentInspectorChartLayout: chartLayout.AgentInspectorChartLayoutReducer
 };
 
 export const Actions = {
@@ -122,11 +127,13 @@ export const Actions = {
     'UpdateServerMapTargetSelected': serverMapSelectedTarget.UpdateServerMapTargetSelected,
     'UpdateServerMapSelectedTargetByList': targetList.UpdateServerMapSelectedTargetByList,
     'UpdateFilterOfServerAndAgentList': serverAndAgent.UpdateFilterOfServerAndAgentList,
-    'UpdateAgentInfo': agentInfo.UpdateAgentInfo,
     'UpdateAdminAgentList': admin.UpdateAdminAgentList,
     'ChangeServerMapDisableState': uiState.ChangeServerMapDisableState,
     'ChangeInfoPerServerVisibleState': uiState.ChangeInfoPerServerVisibleState,
     'UpdateTimelineData': timeline.UpdateTimelineData,
+    'UpdateRange': range.UpdateRange,
+    'UpdateApplicationInspectorChartLayout': chartLayout.UpdateApplicationInspectorChartLayoutInfo,
+    'UpdateAgentInspectorChartLayout': chartLayout.UpdateAgentInspectorChartLayoutInfo
 };
 
 const getUI = createFeatureSelector('uiState');

@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class TransportMetadataFactory {
 
-    private final AtomicLong idGenerator = new AtomicLong(0);
+    private static final AtomicLong idGenerator = new AtomicLong(0);
 
     public TransportMetadataFactory() {
     }
@@ -40,7 +40,8 @@ public class TransportMetadataFactory {
             throw Status.INTERNAL.withDescription("RemoteSocketAddress is null").asRuntimeException();
         }
         final long transportId = idGenerator.getAndIncrement();
-        return new DefaultTransportMetadata(remoteSocketAddress, transportId);
+        final long connectedTime = System.currentTimeMillis();
+        return new DefaultTransportMetadata(remoteSocketAddress, transportId, connectedTime);
     }
 
 

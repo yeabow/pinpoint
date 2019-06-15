@@ -101,9 +101,6 @@ export class StoreHelperService {
     getServerListData(unsubscribe: Subject<void>): Observable<any> {
         return this.getObservable(STORE_KEY.SERVER_LIST, unsubscribe);
     }
-    getAgentInfo(unsubscribe?: Subject<void>): Observable<IServerAndAgentData> {
-        return this.getObservable(STORE_KEY.AGENT_INFO, unsubscribe);
-    }
     getLoadChartYMax(unsubscribe: Subject<void>): Observable<number> {
         return this.getObservable(STORE_KEY.LOAD_CHART_Y_MAX, unsubscribe);
     }
@@ -136,6 +133,15 @@ export class StoreHelperService {
             takeUntil(unsubscribe),
             select(selectTimelineSelectedTime),
         );
+    }
+    getRange(unsubscribe: Subject<void>): Observable<number[]> {
+        return this.getObservable(STORE_KEY.RANGE, unsubscribe);
+    }
+    getApplicationInspectorChartLayoutInfo(unsubscribe: Subject<void>): Observable<IChartLayoutInfoResponse> {
+        return this.getObservable(STORE_KEY.APPLICATION_INSPECTOR_CHART_LAYOUT, unsubscribe);
+    }
+    getAgentInspectorChartLayoutInfo(unsubscribe: Subject<void>): Observable<IChartLayoutInfoResponse> {
+        return this.getObservable(STORE_KEY.AGENT_INSPECTOR_CHART_LAYOUT, unsubscribe);
     }
     getObservable(key: string, unsubscribe?: Subject<void>): Observable<any> {
         return iif(

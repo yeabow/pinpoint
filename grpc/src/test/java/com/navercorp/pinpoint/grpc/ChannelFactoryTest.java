@@ -18,14 +18,25 @@ package com.navercorp.pinpoint.grpc;
 
 import com.google.protobuf.Empty;
 import com.navercorp.pinpoint.common.util.PinpointThreadFactory;
+import com.navercorp.pinpoint.grpc.server.MetadataServerTransportFilter;
+import com.navercorp.pinpoint.grpc.server.TransportMetadataFactory;
+import com.navercorp.pinpoint.grpc.server.TransportMetadataServerInterceptor;
+import com.navercorp.pinpoint.grpc.server.lifecycle.DefaultLifecycleRegistry;
+import com.navercorp.pinpoint.grpc.server.lifecycle.LifecycleListenerAdaptor;
+import com.navercorp.pinpoint.grpc.server.lifecycle.HeaderHijackingServerInterceptor;
+import com.navercorp.pinpoint.grpc.server.lifecycle.LifecycleListener;
+import com.navercorp.pinpoint.grpc.server.lifecycle.LifecycleRegistry;
+import com.navercorp.pinpoint.grpc.server.lifecycle.LifecycleTransportFilter;
 import com.navercorp.pinpoint.grpc.trace.PSpan;
-import com.navercorp.pinpoint.grpc.trace.TraceGrpc;
 import com.navercorp.pinpoint.grpc.client.ChannelFactory;
 import com.navercorp.pinpoint.grpc.server.ServerContext;
 import com.navercorp.pinpoint.grpc.server.ServerFactory;
+import com.navercorp.pinpoint.grpc.trace.SpanGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.NameResolverProvider;
 import io.grpc.Server;
+import io.grpc.ServerInterceptor;
+import io.grpc.ServerTransportFilter;
 import io.grpc.Status;
 import io.grpc.internal.PinpointDnsNameResolverProvider;
 import io.grpc.stub.StreamObserver;
@@ -53,7 +64,7 @@ public class ChannelFactoryTest {
 
     private static ServerFactory serverFactory;
     private static Server server;
-    private static TraceService traceService;
+    private static SpanService spanService;
     private static ExecutorService executorService;
 
     private static ExecutorService dnsExecutorService;
@@ -90,13 +101,13 @@ public class ChannelFactoryTest {
         ManagedChannel managedChannel = channelFactory.build("test-channel", "127.0.0.1", PORT);
         managedChannel.getState(false);
 
-        TraceGrpc.TraceStub traceStub = TraceGrpc.newStub(managedChannel);
+        SpanGrpc.SpanStub spanStub = SpanGrpc.newStub(managedChannel);
 //        traceStub.withExecutor()
 
         final CountdownStreamObserver responseObserver = new CountdownStreamObserver();
 
         logger.debug("sendSpan");
-        StreamObserver<PSpan> sendSpan = traceStub.sendSpan(responseObserver);
+        StreamObserver<PSpan> sendSpan = spanStub.sendSpan(responseObserver);
 
         PSpan pSpan = newSpan();
         logger.debug("client-onNext");
@@ -107,7 +118,7 @@ public class ChannelFactoryTest {
         sendSpan.onCompleted();
 
         logger.debug("state:{}", managedChannel.getState(true));
-        traceService.awaitLatch();
+        spanService.awaitLatch();
         logger.debug("managedChannel shutdown");
         managedChannel.shutdown();
         managedChannel.awaitTermination(1000, TimeUnit.MILLISECONDS);
@@ -132,18 +143,38 @@ public class ChannelFactoryTest {
         logger.debug("server start");
 
         serverFactory = new ServerFactory(ChannelFactoryTest.class.getSimpleName() + "-server", "127.0.0.1", PORT, executorService);
-        traceService = new TraceService(1);
-        serverFactory.addService(traceService);
+        spanService = new SpanService(1);
+
+        serverFactory.addService(spanService);
+
+        addFilter(serverFactory);
         Server server = serverFactory.build();
         return server;
     }
 
-    static class TraceService extends TraceGrpc.TraceImplBase {
+    private static void addFilter(ServerFactory serverFactory) {
+        TransportMetadataFactory transportMetadataFactory = new TransportMetadataFactory();
+        final ServerTransportFilter metadataTransportFilter = new MetadataServerTransportFilter(transportMetadataFactory);
+        serverFactory.addTransportFilter(metadataTransportFilter);
+
+        LifecycleListener lifecycleListener = new LifecycleListenerAdaptor();
+        LifecycleRegistry registry = new DefaultLifecycleRegistry();
+        serverFactory.addTransportFilter(new LifecycleTransportFilter(registry, lifecycleListener));
+
+
+        serverFactory.addInterceptor(new HeaderHijackingServerInterceptor(registry, lifecycleListener));
+
+        ServerInterceptor transportMetadataServerInterceptor = new TransportMetadataServerInterceptor();
+        serverFactory.addInterceptor(transportMetadataServerInterceptor);
+
+    }
+
+    static class SpanService extends SpanGrpc.SpanImplBase {
         private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
         private final CountDownLatch latch;
 
-        public TraceService(int count) {
+        public SpanService(int count) {
             this.latch = new CountDownLatch(count);
         }
 

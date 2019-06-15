@@ -63,7 +63,7 @@ public class ServerFactory {
 
     private final Executor executor;
 
-    private final List<ServerServiceDefinition> bindableServices = new ArrayList<ServerServiceDefinition>();
+    private final List<Object> bindableServices = new ArrayList<Object>();
     private final List<ServerTransportFilter> serverTransportFilters = new ArrayList<ServerTransportFilter>();
     private final List<ServerInterceptor> serverInterceptors = new ArrayList<ServerInterceptor>();
 
@@ -94,10 +94,9 @@ public class ServerFactory {
     }
 
     private ExecutorService newExecutor(String name) {
-        ThreadFactory threadFactory = new PinpointThreadFactory(name + "-boss", true);
+        ThreadFactory threadFactory = new PinpointThreadFactory(name + "-executor", true);
         return Executors.newCachedThreadPool(threadFactory);
     }
-
 
     public void addService(BindableService bindableService) {
         Assert.requireNonNull(bindableService, "bindableService must not be null");
@@ -113,6 +112,7 @@ public class ServerFactory {
         Assert.requireNonNull(serverTransportFilter, "serverTransportFilter must not be null");
         this.serverTransportFilters.add(serverTransportFilter);
     }
+
     public void addInterceptor(ServerInterceptor serverInterceptor) {
         Assert.requireNonNull(serverInterceptor, "serverInterceptor must not be null");
         this.serverInterceptors.add(serverInterceptor);
@@ -126,13 +126,20 @@ public class ServerFactory {
 
         setupInternal(serverBuilder);
 
-        for (ServerServiceDefinition bindableService : this.bindableServices) {
-            serverBuilder.addService(bindableService);
+        for (Object service : this.bindableServices) {
+            logger.info("addService {}", service);
+            if (service instanceof BindableService) {
+                serverBuilder.addService((BindableService) service);
+            } else if(service instanceof ServerServiceDefinition) {
+                serverBuilder.addService((ServerServiceDefinition) service);
+            }
         }
         for (ServerTransportFilter transportFilter : this.serverTransportFilters) {
+            logger.info("addTransportFilter {}", transportFilter);
             serverBuilder.addTransportFilter(transportFilter);
         }
         for (ServerInterceptor serverInterceptor : this.serverInterceptors) {
+            logger.info("addIntercept {}", serverInterceptor);
             serverBuilder.intercept(serverInterceptor);
         }
 
@@ -182,7 +189,6 @@ public class ServerFactory {
     }
 
     public void close() {
-
         final Future<?> workerShutdown = this.workerEventLoopGroup.shutdownGracefully();
         workerShutdown.awaitUninterruptibly();
         ExecutorUtils.shutdownExecutorService(name + "-worker", workerExecutor);
